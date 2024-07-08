@@ -1,13 +1,7 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign Up</title>
-</head>
-<body>
+{% extends 'base.html' %}
+{% block content %}
     <div style="text-align: center;">
-        <h2>Sign Up</h2>
+        <h2>{% block title %}Sign Up{% endblock %}</h2>
         <form method="POST" action="{{ url_for('signup') }}">
             <label for="user_id">User ID:</label>
             <input type="text" id="user_id" name="user_id" required>
@@ -16,5 +10,4 @@
         <br>
         <a href="{{ url_for('login') }}"><button>Login</button></a>
     </div>
-</body>
-</html>
+{% endblock %}
