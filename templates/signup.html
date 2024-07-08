@@ -1,13 +1,24 @@
 {% extends 'base.html' %}
 {% block content %}
-    <div class="main-div">
-        <h2>{% block title %}Sign Up{% endblock %}</h2>
-        <form method="POST" action="{{ url_for('signup') }}">
-            <label for="user_id">User ID:</label>
-            <input type="text" id="user_id" name="user_id" required>
-            <button type="submit">Sign Up</button>
-        </form>
-        <br>
-        <a href="{{ url_for('login') }}"><button>Login</button></a>
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h2>{% block title %}Sign Up{% endblock %}</h2>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST" action="{{ url_for('signup') }}">
+                            <div class="form-group">
+                                <label for="user_id">User ID:</label>
+                                <input type="text" class="form-control" id="user_id" name="user_id" required>
+                            </div>
+                            <br>
+                            <button type="submit" class="btn btn-primary">Sign Up</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 {% endblock %}

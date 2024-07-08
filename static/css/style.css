@@ -1,3 +1,7 @@
-#main-div {
+.main-div {
     text-align: center;
+}
+
+html,body {
+  height: 100%;
 }
