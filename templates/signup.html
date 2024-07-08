@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% block content %}
-    <div style="text-align: center;">
+    <div class="main-div">
         <h2>{% block title %}Sign Up{% endblock %}</h2>
         <form method="POST" action="{{ url_for('signup') }}">
             <label for="user_id">User ID:</label>
