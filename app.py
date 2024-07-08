@@ -24,7 +24,7 @@ def load_user(user_id):
 
 @app.route('/')
 def index():
-    return('Hello World')
+    return render_template('index.html')
 
 
 # login, signup and logout
