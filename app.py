@@ -3,11 +3,13 @@ from dotenv import load_dotenv
 import os
 import sqlite3
 from hashids import Hashids
+import requests
 
 load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.environ["SECRETKEY"]
+virustotal_api_key = os.environ["virustotal_api_key"]
 
 hashids = Hashids(min_length=4, salt=app.config['SECRET_KEY'])
 
@@ -15,6 +17,40 @@ def get_db_connection():
     conn = sqlite3.connect('database.db')
     conn.row_factory = sqlite3.Row
     return conn
+
+### URL Checkers
+## URLhaus 
+
+def is_url_safe_urlhaus(url):
+    response = requests.post("https://urlhaus-api.abuse.ch/v1/url/", data={"url": url})
+    if response.status_code == 200:
+        data = response.json()
+        if data['query_status'] == 'ok':
+            return False  # URL is malicious
+        return True  # URL is safe
+    return False  # Could not verify, treat as unsafe
+
+## Virustotal
+
+def is_url_safe_virustotal(api_key, url):
+    headers = {
+        "x-apikey": api_key
+    }
+    data = {
+        "url": url
+    }
+    response = requests.post("https://www.virustotal.com/api/v3/urls", headers=headers, data=data)
+    
+    if response.status_code == 200:
+        analysis_id = response.json()["data"]["id"]
+        result_response = requests.get(f"https://www.virustotal.com/api/v3/analyses/{analysis_id}", headers=headers)
+        if result_response.status_code == 200:
+            result_data = result_response.json()["data"]["attributes"]["results"]
+            for engine, details in result_data.items():
+                if details["category"] in ["malicious", "suspicious"]:
+                    return False
+            return True
+    return False
 
 # homepage
 @app.route('/')
@@ -33,6 +69,14 @@ def short():
             flash('The URL is required!')
             return redirect(url_for('short'))
 
+        if (not is_url_safe_virustotal(virustotal_api_key, url)):
+            flash('The URL is not safe! by virustotal')
+            return redirect(url_for('short'))
+
+        if (not is_url_safe_urlhaus(url)):
+            flash('The URL is not safe! by urlhaus')
+            return redirect(url_for('short'))
+        
         url_data = conn.execute('INSERT INTO urls (original_url) VALUES (?)',
                                 (url,))
         conn.commit()
