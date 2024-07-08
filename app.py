@@ -39,6 +39,7 @@ def index():
 
 # shortning
 @app.route('/short', methods=('GET', 'POST'))
+@login_required
 def short():
     conn = get_db_connection()
 
@@ -83,15 +84,34 @@ def url_redirect(id):
         return redirect(original_url)
     else:
         flash('Invalid URL')
-        return redirect(url_for('short'))
+        return redirect(url_for('index'))
 
+# stats
+@app.route('/stats')
+@login_required
+def stats():
+    conn = get_db_connection()
+    db_urls = conn.execute('SELECT id, created, original_url, clicks FROM urls').fetchall()
+    conn.close()
 
+    urls = []
+    for url in db_urls:
+        url = dict(url)
+        url['short_url'] = request.host_url + hashids.encode(url['id'])
+        url['delete_url'] = url_for('delete_url', url_id=url['id'])  # Generate delete URL
+        urls.append(url)
 
+    return render_template('stats.html', urls=urls)
 
-
-
-
-
+@app.route('/delete/<int:url_id>', methods=['GET'])
+@login_required
+def delete_url(url_id):
+    conn = get_db_connection()
+    conn.execute('DELETE FROM urls WHERE id = ?', (url_id,))
+    conn.commit()
+    conn.close()
+    flash('URL deleted successfully', 'success')
+    return redirect(url_for('stats'))
 
 # login, signup and logout
 @app.route('/login', methods=['GET', 'POST'])
@@ -121,12 +141,6 @@ def signup():
 def logout():
     logout_user()
     return ('Logout')
-
-# dashboard
-@app.route('/dashboard')
-@login_required
-def dashboard():
-    return('The Dashboard will be here!')
 
 # other
 @app.route('/robots.txt')
