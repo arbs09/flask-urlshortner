@@ -21,7 +21,6 @@ def get_db_connection():
 def index():
     return render_template('index.html')
 
-
 # shortning
 @app.route('/short', methods=('GET', 'POST'))
 def short():
@@ -37,9 +36,9 @@ def short():
         url_data = conn.execute('INSERT INTO urls (original_url) VALUES (?)',
                                 (url,))
         conn.commit()
+        url_id = url_data.lastrowid
         conn.close()
 
-        url_id = url_data.lastrowid
         hashid = hashids.encode(url_id)
         short_url = request.host_url + hashid
 
@@ -54,18 +53,19 @@ def url_redirect(id):
     original_id = hashids.decode(id)
     if original_id:
         original_id = original_id[0]
-        url_data = conn.execute('SELECT original_url, clicks FROM urls'
-                                ' WHERE id = (?)', (original_id,)
-                                ).fetchone()
-        original_url = url_data['original_url']
-        clicks = url_data['clicks']
+        url_data = conn.execute('SELECT original_url, clicks FROM urls WHERE id = (?)', (original_id,)).fetchone()
+        if url_data:
+            original_url = url_data['original_url']
+            clicks = url_data['clicks']
 
-        conn.execute('UPDATE urls SET clicks = ? WHERE id = ?',
-                     (clicks+1, original_id))
-
-        conn.commit()
-        conn.close()
-        return redirect(url_for('confirm_redirect', id=id))
+            conn.execute('UPDATE urls SET clicks = ? WHERE id = ?', (clicks + 1, original_id))
+            conn.commit()
+            conn.close()
+            return redirect(url_for('confirm_redirect', id=id))
+        else:
+            conn.close()
+            flash('URL not found')
+            return redirect(url_for('index'))
     else:
         flash('Invalid URL')
         return redirect(url_for('index'))
@@ -76,28 +76,39 @@ def confirm_redirect(id):
     original_id = hashids.decode(id)
     if original_id:
         original_id = original_id[0]
-        url_data = conn.execute('SELECT original_url FROM urls'
-                                ' WHERE id = (?)', (original_id,)
-                                ).fetchone()
-        original_url = url_data['original_url']
-        conn.close()
-        return render_template('confirm.html', original_url=original_url, id=id)
+        url_data = conn.execute('SELECT original_url FROM urls WHERE id = (?)', (original_id,)).fetchone()
+        if url_data:
+            original_url = url_data['original_url']
+            conn.close()
+            return render_template('confirm.html', original_url=original_url, id=id)
+        else:
+            conn.close()
+            flash('URL not found')
+            return redirect(url_for('index'))
     else:
         flash('Invalid URL')
         return redirect(url_for('index'))
 
+# proceed
 @app.route('/proceed/<id>')
 def proceed_redirect(id):
     conn = get_db_connection()
     original_id = hashids.decode(id)
     if original_id:
         original_id = original_id[0]
-        url_data = conn.execute('SELECT original_url FROM urls'
-                                ' WHERE id = (?)', (original_id,)
-                                ).fetchone()
-        original_url = url_data['original_url']
-        conn.close()
-        return redirect(original_url)
+        url_data = conn.execute('SELECT original_url, proceed FROM urls WHERE id = (?)', (original_id,)).fetchone()
+        if url_data:
+            original_url = url_data['original_url']
+            proceed = url_data['proceed']
+
+            conn.execute('UPDATE urls SET proceed = ? WHERE id = ?', (proceed + 1, original_id))
+            conn.commit()
+            conn.close()
+            return redirect(original_url)
+        else:
+            conn.close()
+            flash('URL not found')
+            return redirect(url_for('index'))
     else:
         flash('Invalid URL')
         return redirect(url_for('index'))
@@ -106,7 +117,7 @@ def proceed_redirect(id):
 @app.route('/stats')
 def stats():
     conn = get_db_connection()
-    db_urls = conn.execute('SELECT id, created, original_url, clicks FROM urls').fetchall()
+    db_urls = conn.execute('SELECT id, created, original_url, clicks, proceed FROM urls').fetchall()
     conn.close()
 
     urls = []
