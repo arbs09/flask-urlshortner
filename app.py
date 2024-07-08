@@ -160,9 +160,9 @@ def proceed_redirect(id):
             expected_token = hashids.encode(original_id)
             
             if confirmation_token == expected_token:
-                resp.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains; preload'
                 resp = make_response(redirect(original_url))
                 resp.set_cookie('confirmation_token', '', expires=0, secure=True, httponly=True)
+                resp.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains; preload'
                 conn.close()
                 return resp
             
