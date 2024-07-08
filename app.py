@@ -1,4 +1,4 @@
-from flask import Flask, render_template, url_for, send_from_directory, request, redirect, flash
+from flask import Flask, render_template, url_for, send_from_directory, request, redirect, flash, make_response
 from dotenv import load_dotenv
 import os
 import sqlite3
@@ -120,11 +120,19 @@ def confirm_redirect(id):
     original_id = hashids.decode(id)
     if original_id:
         original_id = original_id[0]
-        url_data = conn.execute('SELECT original_url FROM urls WHERE id = (?)', (original_id,)).fetchone()
+        url_data = conn.execute('SELECT original_url, active FROM urls WHERE id = (?)', (original_id,)).fetchone()
         if url_data:
-            original_url = url_data['original_url']
-            conn.close()
-            return render_template('confirm.html', original_url=original_url, id=id)
+            if url_data['active'] == 1:
+                original_url = url_data['original_url']
+                conn.close()
+                confirmation_token = hashids.encode(original_id)
+                resp = make_response(render_template('confirm.html', original_url=original_url, id=id))
+                resp.set_cookie('confirmation_token', confirmation_token, httponly=True)
+                return resp
+            else:
+                conn.close()
+                flash('Link disabled!')
+                return redirect(url_for('index'))
         else:
             conn.close()
             flash('URL not found')
@@ -147,8 +155,24 @@ def proceed_redirect(id):
 
             conn.execute('UPDATE urls SET proceed = ? WHERE id = ?', (proceed + 1, original_id))
             conn.commit()
-            conn.close()
-            return redirect(original_url)
+
+            confirmation_token = request.cookies.get('confirmation_token')
+            expected_token = hashids.encode(original_id)
+            
+            if confirmation_token == expected_token:
+                resp.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains; preload'
+                resp = make_response(redirect(original_url))
+                resp.set_cookie('confirmation_token', '', expires=0, secure=True, httponly=True)
+                conn.close()
+                return resp
+            
+            else:
+                conn.execute('UPDATE urls SET active = 0 WHERE id = ?', (original_id,))
+                conn.commit()
+                conn.close()
+                flash('Confirmation token does not match and the link is now been deactivated!')
+                return redirect(url_for('security'))
+        
         else:
             conn.close()
             flash('URL not found')
@@ -161,7 +185,7 @@ def proceed_redirect(id):
 @app.route('/stats')
 def stats():
     conn = get_db_connection()
-    db_urls = conn.execute('SELECT id, created, original_url, clicks, proceed FROM urls').fetchall()
+    db_urls = conn.execute('SELECT id, created, original_url, clicks, proceed FROM urls WHERE active = 1').fetchall()
     conn.close()
 
     urls = []
@@ -181,6 +205,11 @@ def delete_url(url_id):
     conn.close()
     flash('URL deleted successfully', 'success')
     return redirect(url_for('stats'))
+
+# security
+@app.route('/securityalert')
+def security():
+    return render_template('security.html')
 
 # other
 @app.route('/robots.txt')
