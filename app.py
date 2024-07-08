@@ -192,7 +192,7 @@ def stats():
     for url in db_urls:
         url = dict(url)
         url['short_url'] = request.host_url + hashids.encode(url['id'])
-        url['delete_url'] = url_for('delete_url', url_id=url['id'])
+        #url['delete_url'] = url_for('delete_url', url_id=url['id'])
         urls.append(url)
 
     return render_template('stats.html', urls=urls)
