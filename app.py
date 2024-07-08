@@ -53,12 +53,8 @@ def is_url_safe_virustotal(api_key, url):
     return False
 
 # homepage
-@app.route('/')
-def index():
-    return render_template('index.html')
-
 # shortning
-@app.route('/short', methods=('GET', 'POST'))
+@app.route('/', methods=('GET', 'POST'))
 def short():
     conn = get_db_connection()
 
@@ -109,10 +105,10 @@ def url_redirect(id):
         else:
             conn.close()
             flash('URL not found')
-            return redirect(url_for('index'))
+            return redirect(url_for('short'))
     else:
         flash('Invalid URL')
-        return redirect(url_for('index'))
+        return redirect(url_for('short'))
 
 @app.route('/confirm/<id>')
 def confirm_redirect(id):
@@ -132,14 +128,14 @@ def confirm_redirect(id):
             else:
                 conn.close()
                 flash('Link disabled!')
-                return redirect(url_for('index'))
+                return redirect(url_for('short'))
         else:
             conn.close()
             flash('URL not found')
-            return redirect(url_for('index'))
+            return redirect(url_for('short'))
     else:
         flash('Invalid URL')
-        return redirect(url_for('index'))
+        return redirect(url_for('short'))
 
 # proceed
 @app.route('/proceed/<id>')
@@ -176,10 +172,10 @@ def proceed_redirect(id):
         else:
             conn.close()
             flash('URL not found')
-            return redirect(url_for('index'))
+            return redirect(url_for('short'))
     else:
         flash('Invalid URL')
-        return redirect(url_for('index'))
+        return redirect(url_for('short'))
 
 # stats
 @app.route('/stats')
