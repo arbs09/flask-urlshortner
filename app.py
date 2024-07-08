@@ -219,3 +219,7 @@ def robots_txt():
 @app.route('/.well-known/security.txt')
 def security_txt():
     return send_from_directory(app.static_folder, 'security.txt')
+
+
+if __name__ == "__main__":
+    app.run(host='0.0.0.0')
