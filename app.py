@@ -22,6 +22,7 @@ class User(UserMixin):
 def load_user(user_id):
     return User(user_id)
 
+# homepage
 @app.route('/')
 def index():
     return render_template('index.html')
