@@ -9,7 +9,7 @@
                         <h2>{% block title %}Short{% endblock %}</h2>
                     </div>
                     <div class="card-body">
-                        <form method="POST" action="{{ url_for('login') }}">
+                        <form method="POST" action="{{ url_for('short') }}">
                             <div class="form-group">
                                 <label for="user_id">URL</label>
                                 <input type="text" name="url" placeholder="URL to shorten" class="form-control" value="{{ request.form['url'] }}" autofocus>

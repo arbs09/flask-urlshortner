@@ -1,6 +1,5 @@
 from flask import Flask, render_template, url_for, send_from_directory, request, redirect, flash
 from dotenv import load_dotenv
-from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required
 import os
 import sqlite3
 from hashids import Hashids
@@ -10,26 +9,12 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.environ["SECRETKEY"]
 
-login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = 'login'
-
-users = []
-
 hashids = Hashids(min_length=4, salt=app.config['SECRET_KEY'])
 
 def get_db_connection():
     conn = sqlite3.connect('database.db')
     conn.row_factory = sqlite3.Row
     return conn
-
-class User(UserMixin):
-    def __init__(self, id):
-        self.id = id
-
-@login_manager.user_loader
-def load_user(user_id):
-    return User(user_id)
 
 # homepage
 @app.route('/')
@@ -39,7 +24,6 @@ def index():
 
 # shortning
 @app.route('/short', methods=('GET', 'POST'))
-@login_required
 def short():
     conn = get_db_connection()
 
@@ -81,6 +65,38 @@ def url_redirect(id):
 
         conn.commit()
         conn.close()
+        return redirect(url_for('confirm_redirect', id=id))
+    else:
+        flash('Invalid URL')
+        return redirect(url_for('index'))
+
+@app.route('/confirm/<id>')
+def confirm_redirect(id):
+    conn = get_db_connection()
+    original_id = hashids.decode(id)
+    if original_id:
+        original_id = original_id[0]
+        url_data = conn.execute('SELECT original_url FROM urls'
+                                ' WHERE id = (?)', (original_id,)
+                                ).fetchone()
+        original_url = url_data['original_url']
+        conn.close()
+        return render_template('confirm.html', original_url=original_url, id=id)
+    else:
+        flash('Invalid URL')
+        return redirect(url_for('index'))
+
+@app.route('/proceed/<id>')
+def proceed_redirect(id):
+    conn = get_db_connection()
+    original_id = hashids.decode(id)
+    if original_id:
+        original_id = original_id[0]
+        url_data = conn.execute('SELECT original_url FROM urls'
+                                ' WHERE id = (?)', (original_id,)
+                                ).fetchone()
+        original_url = url_data['original_url']
+        conn.close()
         return redirect(original_url)
     else:
         flash('Invalid URL')
@@ -88,7 +104,6 @@ def url_redirect(id):
 
 # stats
 @app.route('/stats')
-@login_required
 def stats():
     conn = get_db_connection()
     db_urls = conn.execute('SELECT id, created, original_url, clicks FROM urls').fetchall()
@@ -98,13 +113,12 @@ def stats():
     for url in db_urls:
         url = dict(url)
         url['short_url'] = request.host_url + hashids.encode(url['id'])
-        url['delete_url'] = url_for('delete_url', url_id=url['id'])  # Generate delete URL
+        url['delete_url'] = url_for('delete_url', url_id=url['id'])
         urls.append(url)
 
     return render_template('stats.html', urls=urls)
 
 @app.route('/delete/<int:url_id>', methods=['GET'])
-@login_required
 def delete_url(url_id):
     conn = get_db_connection()
     conn.execute('DELETE FROM urls WHERE id = ?', (url_id,))
@@ -112,35 +126,6 @@ def delete_url(url_id):
     conn.close()
     flash('URL deleted successfully', 'success')
     return redirect(url_for('stats'))
-
-# login, signup and logout
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        user_id = request.form['user_id']
-        
-        if user_id in users:
-            user = User(user_id)
-            login_user(user)
-            return redirect(url_for('dashboard'))
-        else:
-            return render_template('login.html', error='User does not exist. Please try again.')
-        
-    return render_template('login.html')
-
-@app.route('/signup', methods=['GET', 'POST'])
-def signup():
-    if request.method == 'POST':
-        user_id = request.form['user_id']
-        users.append(user_id)
-        return redirect(url_for('login'))
-    return render_template('signup.html')
-
-@app.route("/logout")
-@login_required
-def logout():
-    logout_user()
-    return ('Logout')
 
 # other
 @app.route('/robots.txt')
