@@ -1,30 +1,33 @@
 {% extends 'base.html' %}
 
 {% block content %}
-    <h1>{% block title %} FlaskShortener Statistics {% endblock %}</h1>
-    <table class="table">
-        <thead>
-            <tr>
-            <th scope="col">#</th>
-            <th scope="col">Short</th>
-            <th scope="col">Original</th>
-            <th scope="col">Clicks</th>
-            <th scope="col">Creation Date</th>
-            <th scope="col">Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for url in urls %}
-                <tr>
-                    <th scope="row">{{ url['id'] }}</th>
-                    <td>{{ url['short_url'] }}</td>
-                    <td>{{ url['original_url'] }}</td>
-                    <td>{{ url['clicks'] }}</td>
-                    <td>{{ url['created'] }}</td>
-                    <td><a href="{{ url.delete_url }}">Delete</a></td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
+    <div class="container mt-5">
+        <h1 class="text-center mb-4">{% block title %} Shortener Statistics {% endblock %}</h1>
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover">
+                <thead class="thead-dark">
+                    <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">Short</th>
+                        <th scope="col">Original</th>
+                        <th scope="col">Clicks</th>
+                        <th scope="col">Creation Date</th>
+                        <th scope="col">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for url in urls %}
+                        <tr>
+                            <th scope="row">{{ url['id'] }}</th>
+                            <td>{{ url['short_url'] }}</td>
+                            <td>{{ url['original_url'] }}</td>
+                            <td>{{ url['clicks'] }}</td>
+                            <td>{{ url['created'] }}</td>
+                            <td><a href="{{ url.delete_url }}" class="btn btn-danger btn-sm">Delete</a></td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 {% endblock %}
