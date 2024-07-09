@@ -85,7 +85,7 @@ def short():
         conn.close()
 
         hashid = hashids.encode(url_id)
-        short_url = request.host_url + hashid
+        short_url = f"https://{request.host}/{hashid}"
 
         return render_template('short.html', short_url=short_url)
 
