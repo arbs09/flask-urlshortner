@@ -65,16 +65,21 @@ def short():
             flash('The URL is required!')
             return redirect(url_for('short'))
 
-        if (not is_url_safe_virustotal(virustotal_api_key, url)):
+        # Ensure the URL starts with https://
+        if not url.startswith(('http://', 'https://')):
+            url = 'https://' + url
+        elif url.startswith('http://'):
+            url = url.replace('http://', 'https://')
+
+        if not is_url_safe_virustotal(virustotal_api_key, url):
             flash('The URL is not safe! by virustotal')
             return redirect(url_for('short'))
 
-        if (not is_url_safe_urlhaus(url)):
+        if not is_url_safe_urlhaus(url):
             flash('The URL is not safe! by urlhaus')
             return redirect(url_for('short'))
         
-        url_data = conn.execute('INSERT INTO urls (original_url) VALUES (?)',
-                                (url,))
+        url_data = conn.execute('INSERT INTO urls (original_url) VALUES (?)', (url,))
         conn.commit()
         url_id = url_data.lastrowid
         conn.close()
