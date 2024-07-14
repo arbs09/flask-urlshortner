@@ -3,4 +3,7 @@ gunicorn
 python-dotenv
 flask-login
 hashids
-requests
+requests>=2.32.2
+werkzeug>=3.0.3
+zipp>=3.19.1
+urllib3>=2.2.2
