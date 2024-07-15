@@ -172,6 +172,7 @@ def proceed_redirect(id):
                 conn.commit()
                 conn.close()
                 flash('Confirmation token does not match and the link is now been deactivated!')
+                print('The URL has been deactivated: {}'.format(url_for('security', _external=True)))
                 return redirect(url_for('security'))
         
         else:
