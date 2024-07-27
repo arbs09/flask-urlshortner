@@ -1,5 +1,7 @@
 FROM python:3.8-alpine
 
+LABEL org.opencontainers.image.description="A Dockerized URL shortener application written in Flask."
+
 WORKDIR /app
 
 COPY requirements.txt requirements.txt
