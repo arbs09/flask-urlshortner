@@ -1,4 +1,4 @@
-FROM python:3.14.0-alpine
+FROM python:3.14.3-alpine
 
 LABEL org.opencontainers.image.description="A Dockerized URL shortener application written in Flask."
 
